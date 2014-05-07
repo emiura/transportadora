@@ -48,11 +48,11 @@ def showMenu():
          if (pesq_type == "Filiais"):
             sys.exit(0)
          if (pesq_type == "Funcionarios"):
-            sys.exit(0)
+            pesqFunc()
          if (pesq_type == "Clientes"):
             sys.exit(0)
          if (pesq_type == "Veiculos"):
-            sys.exit(0)
+            pesqVei()
          if (pesq_type == "Rotas"):
             sys.exit(0)
          if (pesq_type == "Rodovias"):
@@ -141,5 +141,78 @@ def cadVei():
       veiculos = "INSERT INTO Veiculos(veiDescr, veiAno, veiPlaca, veiKm, veiCateg) VALUES ('%s', '%d', '%s', '%d', '%s')" % (fieldValues[0], int(fieldValues[1]), fieldValues[2], int(fieldValues[3]), fieldValues[4])
       execQuery(veiculos)
 
+# search Funcionario
+def pesqFunc():
+   msg = "Informe dados Funcionario"
+   menu_entries = [ "Nome", "Endereco", "Fone", "Data_Nascimento", "Classe", "Categoria" ]
+   search = eg.choicebox("Escolha a opção desejada", title = title, choices = menu_entries)
+   if (search == "Nome"):
+      query = "funNome"
+   if (search == "Endereco"):
+      query = "funEnder"
+   if (search == "Fone"):
+      query = "funFone"
+   if (search == "Data_Nascimento"):
+      query = "fun_DtNasc"
+   if (search == "Classe"):
+      query = "funClasse"
+   if (search == "Categoria"):
+      query = "funCateg"
+   search_string = eg.enterbox("Informe a string a pesquisar", title = title, default = "", strip=True)
+   fun_query = "SELECT * FROM Funcionarios WHERE %s LIKE '%s'" % (query, "%" + search_string + "%")
+   try:
+      cursor.execute(fun_query)
+      # Fetch all the rows 
+      results = cursor.fetchall()
+      text  = "Codigo" + " | " + "Nome" + " | " + "Endereco" + " | " + "Fone" + " | " + "Data Nascimento" + " | " + "Classe" + " | " + "Categoria"
+      for row in results:
+         codigo = row[0]
+         nome = row[1]
+         endereco = row[2]
+         fone = row[3]
+         nasc = row[4]
+         classe = row[5]
+         categoria = row[6]
+         text = text + '\n' + str(codigo) + " | " + nome + " | " + endereco + " | " + fone + " | "  + str(nasc) + " | " + classe + " | " + categoria 
+   except MySQLdb.Error, e:
+      print "Error %d: %s" % (e.args[0], e.args[1])
+   eg.textbox("Pesquisa em Funcionarios:", title = title, text = text, codebox = 1)
+
+
+# search veiculo
+def pesqVei():
+   msg = "Informe dados veiculo"
+   menu_entries = [ "Descricao", "Ano", "Placa", "Quilometragem", "Categoria" ]
+   search = eg.choicebox("Escolha a opção desejada", title = title, choices = menu_entries)
+   if (search == "Descricao"):
+      query = "veiDescr"
+   if (search == "Ano"):
+      query = "veiAno"
+   if (search == "Placa"):
+      query = "veiPlaca"
+   if (search == "Quilometragem"):
+      query = "veiKm"
+   if (search == "Categoria"):
+      query = "veiCateg"
+   search_string = eg.enterbox("Informe a string a pesquisar", title = title, default = "", strip=True)
+   vei_query = "SELECT * FROM Veiculos WHERE %s LIKE '%s'" % (query, "%" + search_string + "%")
+   try:
+      cursor.execute(vei_query)
+      # Fetch all the rows 
+      results = cursor.fetchall()
+      text  = "Codigo" + " | " + "Descricao" + " | " + "Ano" + " | " + "Placa" + " | " + "Quilometragem" + " | " + "Categoria"
+      for row in results:
+         codigo = row[0]
+         descricao = row[1]
+         ano = row[2]
+         placa = row[3]
+         km = row[4]
+         categ = row[5]
+         text = text + '\n' + str(codigo) + " | " + descricao + " | " + str(ano) + " | " + placa + " | "  + str(km) + " | " + categ 
+   except MySQLdb.Error, e:
+      print "Error %d: %s" % (e.args[0], e.args[1])
+   eg.textbox("Pesquisa em veiculos:", title = title, text = text, codebox = 1)
+
+# main
 showMenu()
 db.close()
