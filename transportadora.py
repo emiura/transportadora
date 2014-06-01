@@ -65,7 +65,7 @@ def showMenu():
          op_entries = [ "Ordem servico", "Viagens", "Carga/Descarga" ]
          op_type = eg.choicebox("Escolha o tipo de Operação", title = title, choices = op_entries)
          if (op_type == "Ordem servico"):
-            sys.exit(0)
+            cadOrdens()
          if (op_type == "Viagens"):
             sys.exit(0)
          if (op_type == "Carga/Descarga"):
@@ -170,7 +170,7 @@ def pesqFunc():
          nome = row[1]
          endereco = row[2]
          fone = row[3]
-         nasc = row[4]
+         nasc = row[4] 
          classe = row[5]
          categoria = row[6]
          text = text + '\n' + str(codigo) + " | " + nome + " | " + endereco + " | " + fone + " | "  + str(nasc) + " | " + classe + " | " + categoria 
@@ -200,7 +200,7 @@ def pesqVei():
       cursor.execute(vei_query)
       # Fetch all the rows 
       results = cursor.fetchall()
-      text  = "Codigo" + " | " + "Descricao" + " | " + "Ano" + " | " + "Placa" + " | " + "Quilometragem" + " | " + "Categoria"
+      text  = "Codigo\t" + " | " + "Descricao\t" + " | " + "Ano\t" + " | " + "Placa\t" + " | " + "Quilometragem\t" + " | " + "Categoria\t"
       for row in results:
          codigo = row[0]
          descricao = row[1]
@@ -212,6 +212,32 @@ def pesqVei():
    except MySQLdb.Error, e:
       print "Error %d: %s" % (e.args[0], e.args[1])
    eg.textbox("Pesquisa em veiculos:", title = title, text = text, codebox = 1)
+
+# register ordens
+def cadOrdens():
+   last_entry = cursor.execute("select ordNumero from Ordens order by ordNumero DESC limit 1")
+   last_entry += 1
+   msg = "Informe dados do Pedido"
+   fieldNames = [ "Data", "Quantidade itens", "Valor total", "Codigo Origem", "Codigo Destino", "Codigo Remetente", "Codigo Destinatario", "Codigo Funcionario", "ICMS", "ISS", "Tipo"  ]  
+   fieldValues = []
+   fieldValues = eg.multenterbox(msg, title, fieldNames)
+   while 1:
+      if fieldValues == None:
+         break
+      errmsg = ""
+      for i in range(len(fieldNames)):
+         if fieldValues[i].strip() == "":
+            errmsg = errmsg + ('"%s" eh requerido'  % fieldNames[i])
+      if errmsg == "":
+         break
+      fieldValues = eg.multenterbox(errmsg, title, fieldNames, fieldValues)
+   if (fieldValues != None):
+      ordens = "INSERT INTO Ordens(ordNumero, ordData, ordQtIteNS, ordVlTotal, CodOrigem, CodDestino, CodRemetente, CodDestinatario, funCodigo, ordICMS, ordISS, ordTipo) VALUES ('%d', '%s', '%d', '%f', '%d', '%d', '%d', '%d','%d', '%f','%f','%s')" % (last_entry, fieldValues[0], int(fieldValues[1]), float(fieldValues[2]), int(fieldValues[3]), int(fieldValues[4]), int(fieldValues[5]), int(fieldValues[6]), int(fieldValues[7]), float(fieldValues[8]), float(fieldValues[9]), fieldValues[10])
+      print execQuery(ordens)
+
+
+
+
 
 # main
 showMenu()
