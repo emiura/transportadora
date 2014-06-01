@@ -1,22 +1,39 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import sys
 import easygui as eg
 import MySQLdb
 import subprocess 
+import ConfigParser
+from threading import Thread
+
+# parse config file
+configParser = ConfigParser.RawConfigParser()
+configFilePath = r'/etc/transportadora.conf'
+configParser.read(configFilePath)
+host = configParser.get('mysql','host')
+user = configParser.get('mysql','user')
+password = configParser.get('mysql','password')
+db_name = configParser.get('mysql','db_name')
+
+# global pref
+title = "Programa de controle de transportadora"
 
 # connection
-db = MySQLdb.connect("localhost", "root", "rapadura", "transportadora")
+db = MySQLdb.connect(host, user, password, db_name)
 
 # create a cursor
 cursor = db.cursor()
 
-title = "Programa de controle de transportadora"
-
+# send a text to printer
 def sendPrinter(text):
    lpr = subprocess.Popen("/usr/bin/lpr", stdin=subprocess.PIPE)
    lpr.stdin.write(text) 
+
+# place holder function
+def notYet():
+   eg.msgbox("Not implemented!")
 
 # show main menu
 def showMenu():
@@ -28,19 +45,24 @@ def showMenu():
          cad_entries = [ "Localidades", "Filiais", "Funcionarios", "Clientes", "Veiculos", "Rotas", "Rodovias" ]
          cad_type = eg.choicebox("Escolha o tipo de cadastro", title = title, choices = cad_entries)
          if (cad_type == "Localidades"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (cad_type == "Filiais"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (cad_type == "Funcionarios"):
             cadFunc()
          if (cad_type == "Clientes"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (cad_type == "Veiculos"):
             cadVei()
          if (cad_type == "Rotas"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (cad_type == "Rodovias"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (cad_type == None):
             showMenu()
          
@@ -49,19 +71,26 @@ def showMenu():
          pesq_entries = [ "Localidades", "Filiais", "Funcionarios", "Clientes", "Veiculos", "Rotas", "Rodovias" ]
          pesq_type = eg.choicebox("Escolha o tipo de pesquisa", title = title, choices = pesq_entries)
          if (pesq_type == "Localidades"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (pesq_type == "Filiais"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (pesq_type == "Funcionarios"):
+            notYet()
+            showMenu()
             pesqFunc()
          if (pesq_type == "Clientes"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (pesq_type == "Veiculos"):
             pesqVei()
          if (pesq_type == "Rotas"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (pesq_type == "Rodovias"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (pesq_type == None):
             showMenu()
 
@@ -74,7 +103,8 @@ def showMenu():
          if (op_type == "Viagens"):
             cadViagens()
          if (op_type == "Carga/Descarga"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (op_type == None):
             showMenu()
 
@@ -85,7 +115,8 @@ def showMenu():
          if (rel_type == "Veiculos"):
             reportVeiculos()
          if (rel_type == "Clientes"):
-            sys.exit(0)
+            notYet()
+            showMenu()
          if (rel_type == "Funcionarios"):
             reportFunc()
          if (rel_type == None):
@@ -95,10 +126,6 @@ def showMenu():
       if (action == None) or (action == "Sair"):
          choice = eg.ynbox(msg = "Deseja realmente sair?", title = title, choices = ("Sim", "Não"), image = None)
          sys.exit(0)
-
-
-
-
 
 # execute query
 def execQuery(query):
@@ -197,6 +224,7 @@ def pesqFunc():
    except MySQLdb.Error, e:
       print "Error %d: %s" % (e.args[0], e.args[1])
 
+   # parses returned data, so can edit
    edit_func = eg.choicebox("Codigo - Nome - Endereco - Fone - Data Nasc. - Classe - Categoria", title = title, choices = sql_output)
    codigo = edit_func.split("|")[0].replace(" ", "")
    nome = edit_func.split("|")[1].strip()
@@ -210,6 +238,8 @@ def pesqFunc():
    msg = "Deseja editar, deletar o registro ou Continuar?"
    choices = ["Editar", "Deletar", "Continuar"]
    edit_or_delete = eg.buttonbox(msg,choices=choices)
+
+   # update values
    if (edit_or_delete == "Editar"): 
       msg = "Atualizacao dos registros"
       fieldNames = [ "Codigo", "Nome", "Endereco", "Fone", "Data Nascimento", "Classe", "Categoria" ]  
@@ -236,13 +266,18 @@ def pesqFunc():
             db.commit()
          except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
-
+   # delete entry
    if(edit_or_delete == "Deletar"):
       try:
          cursor.execute("DELETE FROM Funcionarios WHERE funCodigo = '%d'" % (int(codigo)))
          db.commit()
       except MySQLdb.Error, e:
          print "Error %d: %s" % (e.args[0], e.args[1])
+
+   # return to main
+   if (edit_or_delete == "Continuar"):
+      showMenu()
+
 
 
 # search veiculo
@@ -283,6 +318,7 @@ def pesqVei():
    except MySQLdb.Error, e:
       print "Error %d: %s" % (e.args[0], e.args[1])
 
+   # parse output to edit
    edit_veic = eg.choicebox("Codigo - Descricao - Ano - Placa - KM - Categoria", title = title, choices = sql_output)
 
    codigo = edit_veic.split("|")[0].replace(" ", "")
@@ -295,6 +331,8 @@ def pesqVei():
    msg = "Deseja editar ou deletar o registro ou Continuar?"
    choices = ["Editar", "Deletar", "Continuar"]
    edit_or_delete = eg.buttonbox(msg,choices=choices)
+
+   # update
    if (edit_or_delete == "Editar"): 
       msg = "Atualizacao dos registros"
       fieldNames = [ "Codigo", "Descricao", "Ano", "Placa", "Quilometragem", "Categoria" ]  
@@ -320,12 +358,18 @@ def pesqVei():
             db.commit()
          except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
+
+   # delete entry
    if(edit_or_delete == "Deletar"):
       try:
          cursor.execute("DELETE FROM Veiculos WHERE veiCodigo = '%d'" % (int(codigo)))
          db.commit()
       except MySQLdb.Error, e:
          print "Error %d: %s" % (e.args[0], e.args[1])
+
+   # back to main
+   if(edit_or_delete == "Continuar"):
+      showMenu()
 
 
 # register ordens
@@ -356,8 +400,6 @@ def cadOrdens():
       print execQuery(ordens)
 
 
-
-
 # register viagens
 def cadViagens():
    try:
@@ -368,6 +410,7 @@ def cadViagens():
       print last_entry
    except MySQLdb.Error, e:
       print "Error %d: %s" % (e.args[0], e.args[1])
+
    msg = "Informe dados da Viagem:"
    fieldNames = [ "Data", "Observacoes", "KM Inicial", "KM Final", "Codigo Veiculo", "Codigo Funcionario", "Codigo da Rota" ]  
    fieldValues = []
@@ -385,7 +428,6 @@ def cadViagens():
    if (fieldValues != None):
       viagens = "INSERT INTO Viagens(viaNumero, viaData, viaObs, viaKmIni, viaKmFim, veiCodigo, funCodigo, rtaCodigo) VALUES ('%d', '%s', '%s', '%d', '%d', '%d', '%d', '%d' )" % (last_entry, fieldValues[0], fieldValues[1], int(fieldValues[2]), int(fieldValues[3]), int(fieldValues[4]), int(fieldValues[5]), int(fieldValues[6]))
       print execQuery(viagens)
-
 
 
 # report Funcionarios
@@ -411,6 +453,8 @@ def reportFunc():
       print "Error %d: %s" % (e.args[0], e.args[1])
    eg.textbox("Pesquisa em Funcionarios:", title = title, text = text, codebox = 1)
    msg = "Deseja imprimir?"
+   
+   # print
    if eg.ccbox(msg, title): 
       sendPrinter(text)
    else:
@@ -439,6 +483,8 @@ def reportVeiculos():
       print "Error %d: %s" % (e.args[0], e.args[1])
    eg.textbox("Pesquisa em Veiculos:", title = title, text = text, codebox = 1)
    msg = "Deseja imprimir?"
+
+   # print
    if eg.ccbox(msg, title): 
       sendPrinter(text)
    else:

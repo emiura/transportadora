@@ -30,8 +30,9 @@ if [ -f "/etc/debian_version" ]; then
    echo "create database $database" | mysql -u$username -p$password
    mysql -u$username -p$password $database < sql.sql
 
-   install -m 644 transportadora.conf /etc
-   install -m 755 transportadora.py /usr/bin
+   install -m 644 transportadora.conf /etc/
+   install -m 644 transportadora.desktop /usr/share/applications/
+   install -m 755 transportadora.py /usr/bin/
 else
    echo "Not a debian system!"
    exit 1
