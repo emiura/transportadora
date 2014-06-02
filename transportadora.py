@@ -53,7 +53,7 @@ def showMenu():
          if (cad_type == "Funcionarios"):
             cadFunc()
          if (cad_type == "Clientes"):
-            notYet()
+            cadCli()
             showMenu()
          if (cad_type == "Veiculos"):
             cadVei()
@@ -77,8 +77,6 @@ def showMenu():
             notYet()
             showMenu()
          if (pesq_type == "Funcionarios"):
-            notYet()
-            showMenu()
             pesqFunc()
          if (pesq_type == "Clientes"):
             notYet()
@@ -96,7 +94,7 @@ def showMenu():
 
       # operational
       if (action == "Operacao"):
-         op_entries = [ "Ordem servico", "Viagens", "Carga/Descarga" ]
+         op_entries = [ "Ordem servico", "Viagens", "Carga/Descarga", "Volumes" ]
          op_type = eg.choicebox("Escolha o tipo de Operação", title = title, choices = op_entries)
          if (op_type == "Ordem servico"):
             cadOrdens()
@@ -105,12 +103,14 @@ def showMenu():
          if (op_type == "Carga/Descarga"):
             notYet()
             showMenu()
+         if (op_type == "Volumes"):
+            cadVolumes()
          if (op_type == None):
             showMenu()
 
       # report
       if (action == "Relatorios"):
-         rel_entries = [ "Veiculos", "Clientes", "Funcionarios" ]
+         rel_entries = [ "Veiculos", "Clientes", "Funcionarios", "Viagens" ]
          rel_type = eg.choicebox("Escolha o tipo de Relatorio", title = title, choices = rel_entries)
          if (rel_type == "Veiculos"):
             reportVeiculos()
@@ -119,6 +119,8 @@ def showMenu():
             showMenu()
          if (rel_type == "Funcionarios"):
             reportFunc()
+         if (rel_type == "Viagens"):
+            reportViagens()
          if (rel_type == None):
             showMenu()
 
@@ -180,6 +182,26 @@ def cadVei():
    if (fieldValues != None):
       veiculos = "INSERT INTO Veiculos(veiDescr, veiAno, veiPlaca, veiKm, veiCateg) VALUES ('%s', '%d', '%s', '%d', '%s')" % (fieldValues[0], int(fieldValues[1]), fieldValues[2], int(fieldValues[3]), fieldValues[4])
       execQuery(veiculos)
+
+# insert cliente
+def cadCli():
+   msg = "Informe dados do Cliente"
+   fieldNames = [ "Nome", "Endereco", "Fone", "Localidade" ]  
+   fieldValues = []
+   fieldValues = eg.multenterbox(msg, title, fieldNames)
+   while 1:
+      if fieldValues == None:
+         showMenu()
+      errmsg = ""
+      for i in range(len(fieldNames)):
+         if fieldValues[i].strip() == "":
+            errmsg = errmsg + ('"%s" eh requerido'  % fieldNames[i])
+      if errmsg == "":
+         break
+      fieldValues = eg.multenterbox(errmsg, title, fieldNames, fieldValues)
+   if (fieldValues != None):
+      clientes = "INSERT INTO Clientes(Nome, Endereco, Fone, locCodigo) VALUES ('%s', '%s', '%s', '%d')" % (fieldValues[0], fieldValues[1], fieldValues[2], int(fieldValues[3]))
+      execQuery(clientes)
 
 
 
@@ -430,6 +452,36 @@ def cadViagens():
       print execQuery(viagens)
 
 
+# register volumes
+def cadVolumes():
+   try:
+      cursor.execute("select volSeq from Volumes order by volSeq DESC limit 1")
+      db.commit()
+      num = cursor.fetchone()
+      last_entry = int(num[0]) + 1
+      print last_entry
+   except MySQLdb.Error, e:
+      print "Error %d: %s" % (e.args[0], e.args[1])
+
+   msg = "Informe dados do Volume:"
+   fieldNames = [ "Ordem no.", "Descricao", "Peso", "Valor", "Valor Frete", "Volume", "Cubagem" ]  
+   fieldValues = []
+   fieldValues = eg.multenterbox(msg, title, fieldNames)
+   while 1:
+      if fieldValues == None:
+         showMenu()
+      errmsg = ""
+      for i in range(len(fieldNames)):
+         if fieldValues[i].strip() == "":
+            errmsg = errmsg + ('"%s" eh requerido'  % fieldNames[i])
+      if errmsg == "":
+         break
+      fieldValues = eg.multenterbox(errmsg, title, fieldNames, fieldValues)
+   if (fieldValues != None):
+      volumes = "INSERT INTO Volumes(ordNumero, volSeq, volDescr, volPeso, volValor, volVlFrete, volVolume, volCubagem) VALUES ('%d', ' %d' , '%s', '%f', '%f', '%f', '%f', '%f')" % (int(fieldValues[0]), last_entry, fieldValues[1], float(fieldValues[2]), float(fieldValues[3]), float(fieldValues[4]), float(fieldValues[5]), float(fieldValues[6]))
+      print execQuery(volumes)
+
+
 # report Funcionarios
 def reportFunc():
    msg = "Relatorio de Funcionarios"
@@ -482,6 +534,40 @@ def reportVeiculos():
    except MySQLdb.Error, e:
       print "Error %d: %s" % (e.args[0], e.args[1])
    eg.textbox("Pesquisa em Veiculos:", title = title, text = text, codebox = 1)
+   msg = "Deseja imprimir?"
+
+   # print
+   if eg.ccbox(msg, title): 
+      sendPrinter(text)
+   else:
+      showMenu()
+
+
+# report Viagens por veiculo
+def reportViagens():
+   msg = "Relatorio de viagens por veiculo"
+   veicod = int(eg.enterbox(msg='Informe codigo do veiculo', title=title, default='', strip=True))
+
+   veic_query = "SELECT * FROM Viagens WHERE veiCodigo = '%d'" % (veicod) 
+   try:
+      cursor.execute(veic_query)
+      db.commit()
+      # Fetch all the rows 
+      results = cursor.fetchall()
+      text = "| \t" + "Codigo Viagem\t" + " | \t" + "Data Viagem \t" + " | \t" + "Observacoes \t" + " | \t" + "KM inicial \t" + " | \t"  + "Km Final \t" + " | \t" + "Cod Veiculo \t" + " | \t" + "Cod. Funcionario \t" + " | "  + "Codigo da rota \t" + " |"
+      for row in results:
+         codigo = row[0]
+         data = row[1]
+         obs = row[2]
+         km_ini = row[3]
+         km_fim = row[4]
+         cod_vei = row[5]
+         cod_func = row[6]
+         cod_rota = row[7]
+         text = text + '\n' + str(codigo) + " - " + str(data) + " - " + obs + " - " + str(km_ini) + " - "  + str(km_fim) + " - " + str(cod_vei) + " - " + str(cod_func) + " - " + str(cod_rota) 
+   except MySQLdb.Error, e:
+      print "Error %d: %s" % (e.args[0], e.args[1])
+   eg.textbox("Pesquisa em Viagens:", title = title, text = text, codebox = 1)
    msg = "Deseja imprimir?"
 
    # print
